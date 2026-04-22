@@ -45,3 +45,14 @@ git push -u origin main
 git remote set-url origin https://github.com/Developer-Alt92/Argentina_Casting.git
 git push -u origin main
 ```
+
+
+## Si ya subiste una versión rota
+
+Después de reemplazar el contenido de la carpeta local por esta versión corregida, puedes subir los cambios con:
+
+```powershell
+git add .
+git commit -m "Corregir bootstrap de gallery-dl en Windows"
+git push
+```

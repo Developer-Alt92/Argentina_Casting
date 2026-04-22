@@ -35,6 +35,62 @@ function Write-Utf8NoBom {
     [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
 }
 
+function Test-GalleryDlExe {
+    param([Parameter(Mandatory = $true)][string]$ExePath)
+
+    if (-not (Test-Path -LiteralPath $ExePath)) {
+        return $false
+    }
+
+    $versionOut = & $ExePath --version 2>$null
+    return ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($versionOut | Out-String)))
+}
+
+function Ensure-GalleryDl {
+    param(
+        [Parameter(Mandatory = $true)][string]$ExePath,
+        [Parameter(Mandatory = $true)][string]$ToolsDir
+    )
+
+    $tempExe = Join-Path $ToolsDir "gallery-dl.download.exe"
+    $sources = @(
+        "https://github.com/gdl-org/builds/releases/latest/download/gallery-dl_windows.exe",
+        "https://github.com/mikf/gallery-dl/releases/latest/download/gallery-dl.exe"
+    )
+
+    if (Test-GalleryDlExe -ExePath $ExePath) {
+        return
+    }
+
+    if (Test-Path -LiteralPath $ExePath) {
+        Write-Host "gallery-dl existente inválido. Lo voy a reemplazar..." -ForegroundColor Yellow
+        Remove-Item -LiteralPath $ExePath -Force
+    }
+
+    foreach ($url in $sources) {
+        if (Test-Path -LiteralPath $tempExe) {
+            Remove-Item -LiteralPath $tempExe -Force
+        }
+
+        try {
+            Download-File -Url $url -Destination $tempExe
+
+            if (Test-GalleryDlExe -ExePath $tempExe) {
+                Move-Item -LiteralPath $tempExe -Destination $ExePath -Force
+                return
+            }
+            else {
+                Write-Warning "El binario descargado desde '$url' no pasó la verificación de --version."
+            }
+        }
+        catch {
+            Write-Warning "Falló la descarga desde '$url': $($_.Exception.Message)"
+        }
+    }
+
+    throw "No se pudo obtener un ejecutable válido de gallery-dl."
+}
+
 $baseDir  = (Get-Location).Path
 $toolsDir = Join-Path $baseDir "tools"
 
@@ -48,14 +104,10 @@ $stdoutFile   = Join-Path $OutDir "gallery-dl.stdout.log"
 $stderrFile   = Join-Path $OutDir "gallery-dl.stderr.log"
 $logPath      = Join-Path $OutDir "descarga.log"
 
-if (-not (Test-Path -LiteralPath $galleryDlExe)) {
-    Write-Host "No encontré gallery-dl.exe. Lo voy a descargar..." -ForegroundColor Yellow
-    $galleryUrl = "https://github.com/mikf/gallery-dl/releases/latest/download/gallery-dl.exe"
-    Download-File -Url $galleryUrl -Destination $galleryDlExe
-}
+Ensure-GalleryDl -ExePath $galleryDlExe -ToolsDir $toolsDir
 
-if (-not (Test-Path -LiteralPath $galleryDlExe)) {
-    throw "No se pudo descargar gallery-dl.exe"
+if (-not (Test-GalleryDlExe -ExePath $galleryDlExe)) {
+    throw "No se pudo validar gallery-dl.exe después de la descarga."
 }
 
 if ([string]::IsNullOrWhiteSpace($CookiesFile)) {
@@ -104,13 +156,16 @@ $arguments = @(
     $AccountUrl
 )
 
+$versionShown = (& $galleryDlExe --version 2>$null | Out-String).Trim()
+
 Write-Host ""
 Write-Host "========================================" -ForegroundColor DarkGray
-Write-Host "Cuenta  : $AccountUrl" -ForegroundColor Green
-Write-Host "Salida  : $OutDir" -ForegroundColor Green
-Write-Host "Config  : $configPath" -ForegroundColor Green
-Write-Host "Archive : $archiveDb" -ForegroundColor Green
-Write-Host "Skip    : activado (no sobrescribe duplicados)" -ForegroundColor Green
+Write-Host "Cuenta   : $AccountUrl" -ForegroundColor Green
+Write-Host "Salida   : $OutDir" -ForegroundColor Green
+Write-Host "Config   : $configPath" -ForegroundColor Green
+Write-Host "Archive  : $archiveDb" -ForegroundColor Green
+Write-Host "Skip     : activado (no sobrescribe duplicados)" -ForegroundColor Green
+Write-Host "Version  : $versionShown" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor DarkGray
 Write-Host ""
 

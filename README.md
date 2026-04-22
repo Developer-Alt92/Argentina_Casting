@@ -101,3 +101,8 @@ Consulta:
 ## Aviso
 
 Úsalo solo con contenido que tengas derecho a descargar y conservar.
+
+
+## Nota técnica
+
+Este proyecto ahora intenta primero descargar el binario de Windows desde `gdl-org/builds`, que es el enlace que el propio mantenedor señala para los ejecutables actualizados de Windows, y valida el binario con `--version` antes de usarlo. Si ese intento falla, prueba como respaldo el release clásico de `mikf/gallery-dl`.

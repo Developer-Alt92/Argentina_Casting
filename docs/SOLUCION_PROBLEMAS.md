@@ -30,3 +30,27 @@ git add README.md LICENSE
 git commit -m "Resolver merge conservando archivos locales"
 git push -u origin main
 ```
+
+
+## Error: PyInstaller's embedded PKG archive
+
+Si ves un error parecido a este:
+
+```text
+[PYI-3848:ERROR] Could not load PyInstaller's embedded PKG archive
+```
+
+la causa suele ser un ejecutable inválido o incompleto de `gallery-dl.exe`.
+
+Qué hace esta versión del proyecto:
+
+1. intenta descargar primero `gallery-dl_windows.exe` desde `gdl-org/builds`;
+2. valida el binario ejecutando `--version`;
+3. solo lo usa si pasa esa validación;
+4. si falla, prueba el release clásico de `mikf/gallery-dl`.
+
+Arreglo manual rápido:
+
+1. borra `tools\gallery-dl.exe`
+2. vuelve a ejecutar el script
+3. confirma que en pantalla aparezca una línea `Version  : ...` antes de iniciar la descarga
