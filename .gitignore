@@ -1,0 +1,14 @@
+# Descargas y salidas
+ArgentCasting_videos/
+tools/gallery-dl.exe
+*.log
+*.sqlite3
+
+# Cookies locales
+cookies.txt
+
+# PowerShell / editor
+*.tmp
+*.bak
+Thumbs.db
+Desktop.ini
